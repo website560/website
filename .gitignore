@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Local tooling
+.claude/
+
+# Raw source videos (the site uses the processed files in assets/)
+/hero1.mp4
+/hero2.mp4
+/hf_*.mp4
+/herophoto.jpg
