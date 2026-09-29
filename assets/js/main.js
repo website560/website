@@ -250,7 +250,7 @@
     if (!wall) return;
     const from = opt.from || 0, per = opt.per || 8, curve = opt.curve !== false;
     // a spread of photos from every project, interleaved so neighbours differ
-    const byProj = D.projects.map(p => { const l = p.images.map(im => im.thumb || im.src); return l.slice(from, from + per).concat(l.slice(0, Math.max(0, from + per - l.length))); });
+    const byProj = D.projects.map(p => { const l = p.images.filter(im => !opt.landscape || im.w > im.h).map(im => im.thumb || im.src); return l.slice(from, from + per).concat(l.slice(0, Math.max(0, from + per - l.length))); });
     const pics = [];
     for (let i = 0; i < per; i++) byProj.forEach(list => list[i] && pics.push(list[i]));
     let cols = [], raf;
@@ -351,7 +351,7 @@
   function initHome() {
     // ---- scroll-scrubbed hero ----
     const hero = $('.hero'), canvas = $('canvas', hero), ctx = canvas.getContext('2d');
-    const N = 97; const set = () => (innerWidth / innerHeight < .8 ? 'm' : 'd');
+    const N = 121; const set = () => (innerWidth / innerHeight < .8 ? 'm' : 'd');
     let cur = set(), imgs = [], loaded = 0, frame = 0, drawn = -1;
     const src = (s, i) => `assets/hero/${s}/${String(i + 1).padStart(3, '0')}.jpg`;
     const loaderEl = $('.hero-loader');
@@ -390,7 +390,6 @@
       else loopV.addEventListener('playing', reveal, { once: true });
       loopV.play().catch(reveal);
     };
-    const stopLoop = () => { if (loopV) { loopV.classList.remove('on'); loopV.pause(); } };
     const showEnd = on => { endEl.classList.toggle('is-on', on); nav.classList.toggle('is-hidden', !on); };
 
     if (!hasGSAP) { frame = N - 1; draw(true); showEnd(true); startLoop(); return; }
@@ -403,45 +402,44 @@
     // one scroll plays the whole film through to the end scene
     const st = { f: 0 };
     const play = gsap.timeline({ paused: true })
-      .to(st, { f: N - 1, duration: 2.8, ease: 'power1.inOut', onUpdate: () => { frame = st.f; draw(); } }, 0)
-      .to('.hero-intro', { opacity: 0, y: -60, duration: .9, ease: 'power2.in' }, .05)
+      .to(st, { f: N - 1, duration: 2.2, ease: 'power1.inOut', onUpdate: () => { frame = st.f; draw(); } }, 0)
+      .to('.hero-intro', { opacity: 0, y: -60, duration: .6, ease: 'power2.in' }, .05)
       .to('.hero-shade.a', { opacity: .35, duration: 1 }, .2)
-      .to('.hero-shade.b', { opacity: 1, duration: .8 }, 2.0)
-      .fromTo('.hero-end h1 .split-line>span', { yPercent: 110 }, { yPercent: 0, stagger: .1, duration: 1.1, ease: 'expo.out' }, 2.25)
-      .fromTo('.hero-end [data-he]', { opacity: 0, y: 24 }, { opacity: 1, y: 0, stagger: .1, duration: .9, ease: 'expo.out' }, 2.5);
+      .to('.hero-shade.b', { opacity: 1, duration: .8 }, 1.5)
+      .fromTo('.hero-end h1 .split-line>span', { yPercent: 110 }, { yPercent: 0, stagger: .1, duration: 1.1, ease: 'expo.out' }, 1.75)
+      .fromTo('.hero-end [data-he]', { opacity: 0, y: 24 }, { opacity: 1, y: 0, stagger: .1, duration: .9, ease: 'expo.out' }, 1.95);
     $('.hero-end h1').style.opacity = 1;
 
-    let mode = 'intro', atTopSince = 0;
+    // one-way: the film plays once, then the page stays on the curtain loop for the rest of the visit
+    let mode = 'intro';
     const lock = () => { lenis && lenis.stop(); document.documentElement.style.overflow = 'hidden'; };
     const unlock = () => { lenis && lenis.start(); document.documentElement.style.overflow = ''; };
+    const finish = () => { mode = 'end'; unlock(); startLoop(); try { sessionStorage.setItem('voilaIntroSeen', '1'); } catch (e) {} };
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
-    scrollTo(0, 0); lock();
+    scrollTo(0, 0);
+
+    let seen = false; try { seen = sessionStorage.getItem('voilaIntroSeen') === '1'; } catch (e) {}
+    if (seen) {
+      // already watched this visit: open straight on the end scene
+      intro.progress(1); play.progress(1); frame = N - 1; draw(true); showEnd(true); finish();
+    } else lock();
 
     function forward() {
       if (mode !== 'intro') return;
       mode = 'busy'; intro.progress(1);
-      setTimeout(() => showEnd(true), 2200);
-      play.timeScale(1).eventCallback('onComplete', () => { mode = 'end'; atTopSince = Date.now(); unlock(); startLoop(); }).play();
+      setTimeout(() => showEnd(true), 1700);
+      play.eventCallback('onComplete', finish).play();
     }
-    function back() {
-      if (mode !== 'end' || scrollY > 2 || Date.now() - atTopSince < 450) return;
-      mode = 'busy'; lock(); showEnd(false); stopLoop();
-      play.timeScale(1.7).eventCallback('onReverseComplete', () => { mode = 'intro'; }).reverse();
-    }
-    addEventListener('scroll', () => { if (scrollY > 2) atTopSince = Infinity; else if (atTopSince === Infinity) atTopSince = Date.now(); }, { passive: true });
-    addEventListener('wheel', e => { if (e.deltaY > 3) forward(); else if (e.deltaY < -3) back(); }, { passive: true });
+    addEventListener('wheel', e => { if (e.deltaY > 3) forward(); }, { passive: true });
     let ty = null;
     addEventListener('touchstart', e => ty = e.touches[0].clientY, { passive: true });
     addEventListener('touchmove', e => {
       if (ty === null) return;
       const d = ty - e.touches[0].clientY;
       if (mode !== 'end' && e.cancelable) e.preventDefault();
-      if (d > 30) { forward(); ty = null; } else if (d < -30) { back(); ty = null; }
+      if (d > 30) { forward(); ty = null; }
     }, { passive: false });
-    addEventListener('keydown', e => {
-      if (['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(e.key)) forward();
-      if (['ArrowUp', 'PageUp'].includes(e.key)) back();
-    });
+    addEventListener('keydown', e => { if (['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(e.key)) forward(); });
 
     // after hero, nav gets a solid background
     ScrollTrigger.create({ start: () => hero.offsetHeight - 80, onEnter: () => nav.classList.add('is-scrolled'), onLeaveBack: () => nav.classList.remove('is-scrolled') });
@@ -493,7 +491,7 @@
     $('.pgrid').innerHTML = D.projects.map((p, i) => projectCard(p, i, 'pcard')).join('');
     $$('.pcard').forEach((c, i) => { c.classList.add('anim'); c.style.setProperty('--d', (i % 3) * 90 + 'ms'); });
     $$('.fgrid .film').forEach((c, i) => { c.classList.add('anim'); c.style.setProperty('--d', (i % 3) * 90 + 'ms'); });
-    CurvedWall($('.rise-wall'), { from: 0, per: 14, curve: false, cols: 11, tablet: 9, phone: 6, speed: .4 });
+    CurvedWall($('.rise-wall'), { from: 0, per: 6, curve: false, landscape: true, cols: 6, tablet: 5, phone: 3, speed: .4 });
 
     // cinema slider
     const stage = $('.cinema-stage'); const F = D.films; let ci = 0, timer;
@@ -626,6 +624,12 @@
 
   function initAbout() {
     initInstagram();
+    // add short Google reviews to the testimonial loop, word for word
+    const qslider = $('.quote-slider');
+    if (qslider) {
+      const extra = (D.reviews || []).filter(r => r.text.length >= 60 && r.text.length <= 240);
+      qslider.querySelector('.q-dots').insertAdjacentHTML('beforebegin', extra.map(r => `<blockquote class="quote"><p>“${esc(r.text)}”</p><cite>${esc(r.name)} · Google review</cite></blockquote>`).join(''));
+    }
     const qs = $$('.quote'), dots = $('.q-dots'); let qi = 0, qt;
     if (qs.length) {
       dots.innerHTML = qs.map((_, i) => `<button aria-label="Testimonial ${i + 1}" class="${i ? '' : 'on'}"></button>`).join('');

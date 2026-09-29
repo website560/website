@@ -774,3 +774,23 @@ body.menu-open .wa-float{opacity:0;pointer-events:none}
 .map-wrap{margin-top:clamp(56px,6vw,96px)}
 .map-wide{display:block;width:100%;aspect-ratio:auto;height:clamp(300px,34vw,460px);margin:0;border-radius:4px}
 @media (max-width:640px){.map-wide{height:320px}}
+
+/* portfolio film arrows centred so the WhatsApp button never covers them */
+.cinema-ui{position:relative;justify-content:center}
+.cinema-ui .cinema-count{position:absolute;left:var(--gutter);top:50%;transform:translateY(-50%)}
+
+/* ---------- testimonials: every quote shares one cell so the band never changes height ---------- */
+.quote-slider{display:grid;align-items:center}
+.quote,.quote.on{display:block;grid-area:1 / 1;animation:none}
+.quote{opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .8s var(--ease),transform .9s var(--ease),visibility 0s linear .8s}
+.quote.on{opacity:1;visibility:visible;transform:none;transition:opacity .8s var(--ease) .15s,transform .9s var(--ease) .15s,visibility 0s}
+.q-dots{grid-area:2 / 1;flex-wrap:wrap;gap:8px}
+.q-dots button{width:22px}
+
+.bg-ink .q-dots button{background:rgba(251,248,243,.22)}
+.bg-ink .q-dots button.on{background:var(--orange)}
+
+/* portfolio hero wall: fewer photos, native 3:2 landscape, sharp corners */
+.rise-wall .wall-col{flex:0 0 clamp(200px,17vw,300px);border-radius:0}
+.rise-wall .wall-tile{aspect-ratio:3/2;border-radius:0}
+@media (max-width:640px){.rise-wall .wall-col{flex-basis:44vw}}
