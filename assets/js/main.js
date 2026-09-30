@@ -574,7 +574,7 @@
       ];
       const hints = ['Minimalist', 'Wabi-Sabi', 'Japandi', 'Contemporary', 'Luxe', 'HDB', 'Condo'];
       $$('.search-hints').forEach(h => h.innerHTML = hints.map(x => `<button type="button">${x}</button>`).join(''));
-      const toResults = () => { const el = $('#films'); el && (lenis ? lenis.scrollTo(el, { offset: -150, duration: 1.2 }) : el.scrollIntoView({ behavior: 'smooth' })); };
+      const toResults = () => { const el = $('#gallery'); el && (lenis ? lenis.scrollTo(el, { offset: -150, duration: 1.2 }) : el.scrollIntoView({ behavior: 'smooth' })); };
       let jumpTimer;
       const apply = (value, from) => {
         query = value.trim().toLowerCase();
@@ -595,6 +595,7 @@
         inp.addEventListener('input', () => apply(inp.value, inp));
         inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(inp.value, inp); clearTimeout(jumpTimer); toResults(); } });
       });
+      $$('.search-go').forEach(b => b.addEventListener('click', () => { const inp = b.closest('.search-box').querySelector('input'); apply(inp.value, inp); clearTimeout(jumpTimer); toResults(); }));
       $$('.search-clear').forEach(b => b.addEventListener('click', () => { apply('', null); b.closest('.search-box').querySelector('input').focus(); }));
       $$('.search-hints').forEach(h => h.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; apply(b.textContent, null); clearTimeout(jumpTimer); toResults(); }));
       const pre = new URLSearchParams(location.search).get('q'); if (pre) { apply(pre, null); setTimeout(toResults, 600); }

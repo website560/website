@@ -1037,3 +1037,6 @@ body.menu-open .wa-float{opacity:0;pointer-events:none}
 .hs.bottom .hs-card{top:calc(50% + 18px)}
 .hist-pin{padding-bottom:8px}
 .hist-track{height:calc(100vh - 190px);height:calc(100svh - 190px);min-height:440px}
+
+.search-go{padding:10px 18px;flex:none;margin-left:4px}
+.hero-search .search-box{padding-right:6px}
