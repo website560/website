@@ -10,7 +10,7 @@
 <script>document.documentElement.classList.add('js')</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500&family=Inter:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/css/style.css?v=1790679300">
+<link rel="stylesheet" href="assets/css/style.css?v=1790762851">
 </head>
 <body data-page="portfolio">
 <main>
@@ -20,9 +20,14 @@
     <div class="wrap rise-copy">
       <h1 class="h-display"><span class="split-line"><span>Every home,</span></span><span class="split-line"><span><em>a revelation.</em></span></span></h1>
       <p class="lead" data-hero-fade>At the end of the journey, looking back, it is always a pleasant surprise, a revelation and a wonderment at the new creation.</p>
-      <div class="btns" data-hero-fade>
-        <a href="contact.html#book" class="btn">Book a free consultation <svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 12h15M13 6l6 6-6 6"/></svg></a>
-        <a href="#projects" class="link-u">View projects</a>
+      <div class="pf-search hero-search" id="search" data-hero-fade>
+        <form class="search-box" role="search" onsubmit="return false">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="pf-q" class="pf-q" type="search" placeholder="Search a style or location, e.g. Minimalist, Wabi-Sabi, Tampines" autocomplete="off" aria-label="Search projects">
+          <button type="button" class="search-clear" aria-label="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+        </form>
+        <div class="search-hints" aria-label="Quick searches"></div>
+        <p class="search-note" aria-live="polite"></p>
       </div>
     </div>
   </section>
@@ -34,6 +39,19 @@
       <a href="#gallery" id="t-gallery">Gallery<sup></sup></a>
     </div>
   </nav>
+
+  <div class="pf-search pf-search-bar">
+    <div class="wrap">
+      <form class="search-box" role="search" onsubmit="return false">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input class="pf-q" type="search" placeholder="Search a style or location" autocomplete="off" aria-label="Search projects">
+        <button type="button" class="search-clear" aria-label="Clear search"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M5 5l14 14M19 5L5 19"/></svg></button>
+      </form>
+      <div class="search-hints" aria-label="Quick searches"></div>
+      <p class="search-note" aria-live="polite"></p>
+    </div>
+  </div>
+
 
   <!-- FILMS: cinematic slider -->
   <section class="section bg-ink" id="films">
@@ -108,7 +126,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-<script src="assets/js/data.js?v=1790679300"></script>
-<script src="assets/js/main.js?v=1790679300"></script>
+<script src="assets/js/data.js?v=1790762851"></script>
+<script src="assets/js/main.js?v=1790762851"></script>
 </body>
 </html>

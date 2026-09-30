@@ -71,7 +71,6 @@
           </div>
           <div class="f-explore"><h4>Explore</h4><ul>${NAV.map(([h, t]) => `<li><a href="${h}">${t}</a></li>`).join('')}</ul></div>
         </div>
-        <div class="footer-mark">${LOGO()}</div>
         <div class="footer-bottom"><span>© ${new Date().getFullYear()} VOILÀ DESIGN PTE LTD</span><span>Award-Winning Interior Design Studio</span></div>
       </div>
     </footer>`;
@@ -318,9 +317,24 @@
   function buildReviews(el) {
     const R = D.reviews || []; const cols = [[], []];
     R.forEach((r, i) => cols[i % 2].push(reviewCard(r, i)));
-    el.innerHTML = cols.map((c, i) => `<div class="mv-col ${i % 2 ? 'down' : ''}" style="--dur:${c.length * 6 + i * 8}s">${c.join('')}${c.join('')}</div>`).join('');
+    el.innerHTML = cols.map((c, i) => `<div class="mv-col ${i % 2 ? 'down' : ''}" style="--dur:${c.length * 6 + i * 8}s"><div class="mv-inner">${c.join('')}${c.join('')}</div></div>`).join('');
     // on single-column mobile, show all reviews in the visible column
-    if (matchMedia('(max-width:640px)').matches) { const all = R.map(reviewCard); el.firstElementChild.innerHTML = all.join('') + all.join(''); el.firstElementChild.style.setProperty('--dur', R.length * 6 + 's'); }
+    if (matchMedia('(max-width:640px)').matches) { const all = R.map(reviewCard); el.firstElementChild.innerHTML = '<div class="mv-inner">' + all.join('') + all.join('') + '</div>'; el.firstElementChild.style.setProperty('--dur', R.length * 6 + 's'); }
+  }
+
+  /* ---------------- reviews: wheel over the section scrolls the reviews, not the page ---------------- */
+  function reviewsScroll(el) {
+    if (!el || isTouch) return;
+    const inners = $$('.mv-inner', el); let o = 0, target = 0, raf = null;
+    const half = () => inners[0] ? inners[0].scrollHeight / 2 : 1;
+    const tick = () => {
+      o += (target - o) * .18;
+      const h = half(); const y = ((o % h) + h) % h; // wrap so the loop never ends
+      inners.forEach(n => n.style.transform = `translate3d(0,${-y}px,0)`);
+      raf = Math.abs(target - o) > .5 ? requestAnimationFrame(tick) : null;
+    };
+    el.addEventListener('wheel', e => { e.preventDefault(); target += e.deltaY; if (!raf) raf = requestAnimationFrame(tick); }, { passive: false });
+    if (lenis) { el.addEventListener('mouseenter', () => lenis.stop()); el.addEventListener('mouseleave', () => lenis.start()); }
   }
 
   /* ---------------- generic reveals ---------------- */
@@ -477,7 +491,7 @@
     }));
 
     // ---- reviews ----
-    buildReviews($('.marquee-v'));
+    buildReviews($('.marquee-v')); reviewsScroll($('.marquee-v'));
 
     // ---- cta parallax ----
     const bg = $('.cta-band .bg');
@@ -535,10 +549,11 @@
     const chips = $('.chips');
     chips.innerHTML = `<button class="chip on" data-s="*">All<small>${G.length}</small></button>` +
       Object.entries(styles).sort((a, b) => b[1] - a[1]).map(([s, n]) => `<button class="chip" data-s="${esc(s)}">${esc(s)}<small>${n}</small></button>`).join('');
-    const mas = $('.ugrid'), more = $('.load-more'); let filter = '*', shown = 0, list = G;
+    const mas = $('.ugrid'), more = $('.load-more'); let filter = '*', shown = 0, list = G, query = '';
+    const hit = (g, q) => !q || (g.style + ' ' + g.place).toLowerCase().includes(q);
     const PAGE = 24;
     function render(reset) {
-      if (reset) { mas.innerHTML = ''; shown = 0; list = filter === '*' ? G : G.filter(g => g.style === filter); }
+      if (reset) { mas.innerHTML = ''; shown = 0; list = (filter === '*' ? G : G.filter(g => g.style === filter)).filter(g => hit(g, query)); if (!list.length) mas.innerHTML = '<p class="search-empty">No photos match this search.</p>'; }
       const slice = list.slice(shown, shown + PAGE);
       mas.insertAdjacentHTML('beforeend', slice.map((g, k) => `<button class="m-item anim" data-gi="${shown + k}" style="--d:${(k % 4) * 80}ms"><img src="${g.thumb || g.src}" width="${g.w}" height="${g.h}" alt="${esc(g.style)}, ${esc(g.place)}" loading="lazy"><span class="cap"><b>${esc(g.style)}</b>${esc(g.place)}</span></button>`).join(''));
       watchAnim(mas);
@@ -549,6 +564,41 @@
     more.addEventListener('click', () => render(false));
     mas.addEventListener('click', e => { const m = e.target.closest('.m-item'); if (m) openLightbox(list, +m.dataset.gi); });
     render(true);
+
+    // ---- search: filters films, projects and gallery together (hero bar + pinned bar stay in sync) ----
+    const qIns = $$('.pf-q');
+    if (qIns.length) {
+      const items = [
+        { els: $$('.fgrid .film'), key: el => el.textContent },
+        { els: $$('.pgrid .pcard'), key: el => el.textContent }
+      ];
+      const hints = ['Minimalist', 'Wabi-Sabi', 'Japandi', 'Contemporary', 'Luxe', 'HDB', 'Condo'];
+      $$('.search-hints').forEach(h => h.innerHTML = hints.map(x => `<button type="button">${x}</button>`).join(''));
+      const toResults = () => { const el = $('#films'); el && (lenis ? lenis.scrollTo(el, { offset: -150, duration: 1.2 }) : el.scrollIntoView({ behavior: 'smooth' })); };
+      let jumpTimer;
+      const apply = (value, from) => {
+        query = value.trim().toLowerCase();
+        qIns.forEach(i => { if (i.value !== value) i.value = value; i.closest('.search-box').classList.toggle('has-value', !!query); });
+        let nf = 0, np = 0;
+        items.forEach((grp, gi) => grp.els.forEach(el => { const ok = !query || grp.key(el).toLowerCase().includes(query); el.classList.toggle('is-hidden-by-search', !ok); if (ok) gi ? np++ : nf++; }));
+        render(true);
+        const empty = (sel, n, msg) => { const box = $(sel); let e = box.querySelector(':scope > .search-empty'); if (!n) { if (!e) box.insertAdjacentHTML('beforeend', `<p class="search-empty">${msg}</p>`); } else e && e.remove(); };
+        empty('.fgrid', nf, 'No films match this search.'); empty('.pgrid', np, 'No projects match this search.');
+        const note = query ? `<b>${nf}</b> film${nf === 1 ? '' : 's'} · <b>${np}</b> project${np === 1 ? '' : 's'} · <b>${list.length}</b> photo${list.length === 1 ? '' : 's'} for “${esc(value.trim())}”` : '';
+        $$('.search-note').forEach(n => n.innerHTML = note);
+        hasGSAP && ScrollTrigger.refresh();
+        // searching from the hero takes you down to the results
+        clearTimeout(jumpTimer);
+        if (query && from && from.closest('.hero-search')) jumpTimer = setTimeout(toResults, 650);
+      };
+      qIns.forEach(inp => {
+        inp.addEventListener('input', () => apply(inp.value, inp));
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); apply(inp.value, inp); clearTimeout(jumpTimer); toResults(); } });
+      });
+      $$('.search-clear').forEach(b => b.addEventListener('click', () => { apply('', null); b.closest('.search-box').querySelector('input').focus(); }));
+      $$('.search-hints').forEach(h => h.addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; apply(b.textContent, null); clearTimeout(jumpTimer); toResults(); }));
+      const pre = new URLSearchParams(location.search).get('q'); if (pre) { apply(pre, null); setTimeout(toResults, 600); }
+    }
 
     // tabs scroll-spy
     const tabs = $$('.tabs a');
@@ -622,8 +672,70 @@
     InfiniteLoop(root, track, .6);
   }
 
+  /* ---------------- team carousel: centre member large, sides smaller, overlay on hover/tap ---------------- */
+  function TeamCarousel() {
+    const stage = $('.team-stage'); if (!stage) return;
+    const cards = $$('.tm', stage), n = cards.length; let ci = 1;
+    const layout = () => {
+      const w = cards[0].getBoundingClientRect().width, gap = mobile() ? 14 : 28;
+      cards.forEach((c, i) => {
+        let d = i - ci; if (d > n / 2) d -= n; if (d < -n / 2) d += n;
+        c.style.transform = `translateX(calc(-50% + ${d * (w * .92 + gap)}px)) scale(${d === 0 ? 1 : .78})`;
+        c.style.zIndex = 10 - Math.abs(d);
+        c.classList.toggle('is-center', d === 0);
+        if (d !== 0) c.classList.remove('is-open');
+      });
+    };
+    const go = i => { ci = (i + n) % n; layout(); };
+    stage.addEventListener('click', e => {
+      const c = e.target.closest('.tm'); if (!c) return;
+      const i = +c.dataset.i;
+      if (i !== ci) { go(i); return; }
+      if (isTouch) c.classList.toggle('is-open');
+    });
+    $('.tm-prev').addEventListener('click', () => go(ci - 1));
+    $('.tm-next').addEventListener('click', () => go(ci + 1));
+    let sx = null;
+    stage.addEventListener('pointerdown', e => sx = e.clientX);
+    stage.addEventListener('pointerup', e => { if (sx !== null && Math.abs(e.clientX - sx) > 40) go(e.clientX < sx ? ci + 1 : ci - 1); sx = null; });
+    addEventListener('keydown', e => { if (!stage.matches(':hover')) return; if (e.key === 'ArrowLeft') go(ci - 1); if (e.key === 'ArrowRight') go(ci + 1); });
+    addEventListener('resize', layout); layout(); addEventListener('load', layout);
+  }
+
+  /* ---------------- history: vertical scroll drives the timeline sideways ---------------- */
+  function HistoryScroll() {
+    const sec = $('.hist'), track = $('.hist-track'); if (!sec || !track) return;
+    if (mobile() || !hasGSAP) return; // phones: native sideways swipe
+    const stops = $$('.hs', track), fill = $('.hist-line i', track);
+    // first and last milestones can sit in the centre of the screen
+    const pad = () => { const w = stops[0].offsetWidth; track.style.paddingLeft = track.style.paddingRight = (innerWidth / 2 - w / 2) + 'px'; };
+    pad(); ScrollTrigger.addEventListener('refreshInit', pad); // re-measure before every refresh so the scroll distance includes the centring padding
+    const dist = () => track.scrollWidth - innerWidth;
+    // the milestone nearest the centre is in focus; the others fade back and the line draws up to the focused circle
+    const paint = p => {
+      const shift = p * dist(), mid = innerWidth / 2;
+      let reach = 0;
+      stops.forEach(h => {
+        const cx = h.offsetLeft + h.offsetWidth / 2 - shift;
+        const d = (cx - mid) / innerWidth;               // 0 = centred, ±0.5 = at the edge
+        const a = Math.min(1, Math.abs(d) * 2.4);        // 0 in focus → 1 far away
+        h.style.setProperty('--f', (1 - a).toFixed(3));
+        h.classList.toggle('is-focus', Math.abs(d) < .18);
+        h.classList.toggle('is-in', d < .22);            // appears as it approaches the centre, hides again if you scroll back
+        if (d < .22) reach = Math.max(reach, h.offsetLeft + h.offsetWidth / 2);
+      });
+      fill.style.transform = `scaleX(${reach / track.scrollWidth})`;
+    };
+    gsap.to(track, {
+      x: () => -dist(), ease: 'none',
+      scrollTrigger: { trigger: sec, start: 'top top', end: () => '+=' + dist(), pin: true, scrub: .8, invalidateOnRefresh: true, anticipatePin: 1,
+        onUpdate: s => paint(s.progress), onRefresh: s => paint(s.progress) }
+    });
+    paint(0);
+  }
+
   function initAbout() {
-    initInstagram();
+    initInstagram(); TeamCarousel(); HistoryScroll();
     // add short Google reviews to the testimonial loop, word for word
     const qslider = $('.quote-slider');
     if (qslider) {
