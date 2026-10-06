@@ -706,7 +706,7 @@
   /* ---------------- history: vertical scroll drives the timeline sideways ---------------- */
   function HistoryScroll() {
     const sec = $('.hist'), track = $('.hist-track'); if (!sec || !track) return;
-    if (mobile() || !hasGSAP) return; // phones: native sideways swipe
+    if (mobile() || !hasGSAP) { $$('.hs', track).forEach((h, i) => { h.classList.add('anim'); h.style.setProperty('--d', (i % 2) * 80 + 'ms'); }); return; } // phones: vertical journey, each milestone fades in as it arrives
     const stops = $$('.hs', track), fill = $('.hist-line i', track);
     // first and last milestones can sit in the centre of the screen
     const pad = () => { const w = stops[0].offsetWidth; track.style.paddingLeft = track.style.paddingRight = (innerWidth / 2 - w / 2) + 'px'; };
