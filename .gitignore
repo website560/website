@@ -9,3 +9,8 @@
 /hero2.mp4
 /hf_*.mp4
 /herophoto.jpg
+
+# Raw photos supplied by the client (the site uses the cropped versions in assets/team/)
+/DSC_*
+/heronew.mp4
+/WhatsApp*
