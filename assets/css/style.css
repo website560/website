@@ -1063,3 +1063,13 @@ body.menu-open .wa-float{opacity:0;pointer-events:none}
   .hs-year{font-size:22px}
   .hs h3{font-size:19px}
 }
+
+/* project pages on phones: every photo keeps its own shape, nothing cropped */
+@media (max-width:860px){
+  .proj-flow figure,.proj-flow figure.pf-full,.proj-flow figure.pf-half,.proj-flow figure.pf-l,.proj-flow figure.pf-r,.proj-flow figure.pf-c{aspect-ratio:auto!important;height:auto}
+  .proj-flow figure img{height:auto;object-fit:unset;display:block}
+}
+/* press: CNA and Gold 905 are tight-cropped files, size them to match the others' visual weight */
+.press img[src$="cna.svg"]{height:52px}
+.press img[src$="gold905.svg"]{height:34px}
+@media (max-width:860px){.press img[src$="cna.svg"]{height:44px}.press img[src$="gold905.svg"]{height:28px}}

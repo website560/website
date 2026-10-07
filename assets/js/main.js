@@ -410,18 +410,19 @@
 
     // intro: logo and slogan fade in softly
     const intro = gsap.timeline({ delay: .3 });
-    intro.fromTo('.hero-intro .logo-svg', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 2, ease: 'power3.out' })
-      .fromTo('.hero-tag', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 1.6, ease: 'power3.out' }, '-=1.3');
+    intro.fromTo('.hero-intro .logo-svg', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 1.1, ease: 'power3.out' })
+      .fromTo('.hero-tag', { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: .9, ease: 'power3.out' }, '-=.7')
+      .add(() => forward(), '+=.5'); // the intro holds for about two seconds in total, then moves on by itself
 
     // one scroll plays the whole film through to the end scene
     const st = { f: 0 };
     const play = gsap.timeline({ paused: true })
-      .to(st, { f: N - 1, duration: 2.2, ease: 'power1.inOut', onUpdate: () => { frame = st.f; draw(); } }, 0)
-      .to('.hero-intro', { opacity: 0, y: -60, duration: .6, ease: 'power2.in' }, .05)
+      .to(st, { f: N - 1, duration: 1.6, ease: 'power1.inOut', onUpdate: () => { frame = st.f; draw(); } }, 0)
+      .to('.hero-intro', { opacity: 0, y: -60, duration: .5, ease: 'power2.in' }, .05)
       .to('.hero-shade.a', { opacity: .35, duration: 1 }, .2)
-      .to('.hero-shade.b', { opacity: 1, duration: .8 }, 1.5)
-      .fromTo('.hero-end h1 .split-line>span', { yPercent: 110 }, { yPercent: 0, stagger: .1, duration: 1.1, ease: 'expo.out' }, 1.75)
-      .fromTo('.hero-end [data-he]', { opacity: 0, y: 24 }, { opacity: 1, y: 0, stagger: .1, duration: .9, ease: 'expo.out' }, 1.95);
+      .to('.hero-shade.b', { opacity: 1, duration: .8 }, 1.0)
+      .fromTo('.hero-end h1 .split-line>span', { yPercent: 110 }, { yPercent: 0, stagger: .1, duration: 1.1, ease: 'expo.out' }, 1.15)
+      .fromTo('.hero-end [data-he]', { opacity: 0, y: 24 }, { opacity: 1, y: 0, stagger: .1, duration: .9, ease: 'expo.out' }, 1.35);
     $('.hero-end h1').style.opacity = 1;
 
     // one-way: the film plays once, then the page stays on the curtain loop for the rest of the visit
@@ -435,13 +436,13 @@
     let seen = false; try { seen = sessionStorage.getItem('voilaIntroSeen') === '1'; } catch (e) {}
     if (seen) {
       // already watched this visit: open straight on the end scene
-      intro.progress(1); play.progress(1); frame = N - 1; draw(true); showEnd(true); finish();
+      mode = 'end'; intro.progress(1); play.progress(1); frame = N - 1; draw(true); showEnd(true); finish();
     } else lock();
 
     function forward() {
       if (mode !== 'intro') return;
       mode = 'busy'; intro.progress(1);
-      setTimeout(() => showEnd(true), 1700);
+      setTimeout(() => showEnd(true), 1200);
       play.eventCallback('onComplete', finish).play();
     }
     addEventListener('wheel', e => { if (e.deltaY > 3) forward(); }, { passive: true });
