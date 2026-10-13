@@ -1,0 +1,16 @@
+Voilà CMS: settings to create
+
+Create a file named  .env.local  in the website folder (/Users/poopiepie/voilawebsite)
+with these three lines, filled in. It is ignored by git and never uploaded.
+Then add the same three as Environment Variables in Vercel
+(Vercel → the website project → Settings → Environment Variables → add each → Redeploy).
+
+SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+SUPABASE_SERVICE_KEY=eyJ...   (Supabase → Project Settings → API Keys → "service_role" secret. Keep this private.)
+SESSION_SECRET=any-long-random-text-at-least-32-characters
+
+Where to find the first two:
+  Supabase → your project → Project Settings → API
+    Project URL        → SUPABASE_URL
+    service_role key   → SUPABASE_SERVICE_KEY   (never put this one in chat or in the website files)
+    anon public key    → this one IS safe to share; I need it to wire up the website.

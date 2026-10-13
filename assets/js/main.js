@@ -71,7 +71,7 @@
           </div>
           <div class="f-explore"><h4>Explore</h4><ul>${NAV.map(([h, t]) => `<li><a href="${h}">${t}</a></li>`).join('')}</ul></div>
         </div>
-        <div class="footer-bottom"><span>© ${new Date().getFullYear()} VOILÀ DESIGN PTE LTD</span><span>Award-Winning Interior Design Studio</span></div>
+        <div class="footer-bottom"><span>© ${new Date().getFullYear()} VOILÀ DESIGN PTE LTD</span><span data-site="footer_tagline">Award-Winning Interior Design Studio</span></div>
       </div>
     </footer>`;
 
@@ -769,8 +769,53 @@
     });
   }
 
+  /* ---------------- CMS: read live content from Supabase, fall back to the built-in data ---------------- */
+  const digits = s => String(s || '').replace(/[^\d]/g, '');
+  const paras = s => String(s || '').split(/\n\s*\n/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
+  async function loadCMS() {
+    const cfg = window.VOILA_CMS; if (!cfg || !cfg.supabaseUrl) return;
+    const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 4000);
+    let S = {};
+    try {
+      const r = await fetch(`${cfg.supabaseUrl}/rest/v1/sections?select=key,data`, { headers: { apikey: cfg.supabaseAnonKey, Authorization: 'Bearer ' + cfg.supabaseAnonKey }, cache: 'no-store', signal: ctl.signal });
+      if (!r.ok) throw new Error('cms ' + r.status);
+      (await r.json()).forEach(row => S[row.key] = row.data);
+    } catch (e) { clearTimeout(timer); return; }
+    clearTimeout(timer);
+    try { applyCMS(S); } catch (e) { console.error('CMS apply failed', e); }
+  }
+  function applyCMS(S) {
+    if (Array.isArray(S.projects) && S.projects.length) D.projects = S.projects.map(p => ({ ...p, images: (p.images || []).map(im => ({ ...im, thumb: im.thumb || im.src })) }));
+    if (Array.isArray(S.films) && S.films.length) D.films = S.films;
+    if (Array.isArray(S.projects) || Array.isArray(S.gallery)) {
+      const groups = {};
+      D.projects.forEach(p => p.images.forEach(im => (groups[p.place] ||= []).push({ ...im, style: p.style, place: p.place, film: p.film, project: p.slug })));
+      (S.gallery || []).forEach(g => (groups[g.place] ||= []).push({ ...g, thumb: g.thumb || g.src, project: null }));
+      const cols = Object.values(groups), out = []; for (let i = 0; cols.some(c => c[i]); i++) cols.forEach(c => c[i] && out.push(c[i]));
+      D.gallery = out;
+    }
+    if (Array.isArray(S.reviews) && S.reviews.length) D.reviews = S.reviews;
+    if (Array.isArray(S.instagram) && S.instagram.length) window.VOILA_IG = S.instagram;
+    const site = S.site || {};
+    if (site.instagram_feed_url) window.VOILA_IG_FEED = site.instagram_feed_url;
+    $$('[data-site]').forEach(el => { const v = site[el.dataset.site]; if (v != null && v !== '') el.textContent = v; });
+    $$('[data-site-href]').forEach(el => { const v = site[el.dataset.siteHref]; if (v) el.href = v; });
+    $$('[data-site-wa]').forEach(el => { const v = site[el.dataset.siteWa]; if (v) el.href = 'https://wa.me/' + digits(v); });
+    $$('[data-site-mail]').forEach(el => { const v = site[el.dataset.siteMail]; if (v) el.href = 'mailto:' + v; });
+    if (site.instagram_handle) $$('.ig-title a, .ig-handle').forEach(a => { a.href = 'https://www.instagram.com/' + site.instagram_handle + '/'; if (a.classList.contains('ig-handle')) a.textContent = '@' + site.instagram_handle; else a.innerHTML = `<em>@</em>${esc(site.instagram_handle)}`; });
+    // About page: team, history. Both pages: press logos.
+    const stage = $('.team-stage');
+    if (stage && Array.isArray(S.team) && S.team.length) stage.innerHTML = S.team.map((m, i) => `<article class="tm" data-i="${i}"><img src="${esc(m.photo)}" alt="${esc(m.name)}, ${esc(m.role)} at Voilà" loading="lazy" draggable="false"><div class="tm-cap"><b>${esc(m.name)}</b><span>${esc(m.role)}</span></div><div class="tm-over"><h3>${esc(m.name)}</h3><p class="tm-role">${esc(m.role)}</p>${paras(m.bio)}</div></article>`).join('');
+    const track = $('.hist-track');
+    if (track && Array.isArray(S.history) && S.history.length) track.innerHTML = '<div class="hist-line"><i></i></div>' + S.history.map((h, i) => { const media = `<div class="hs-media"><img src="${esc(h.image)}" alt="" loading="lazy"></div>`, body = `<div class="hs-body"><span class="hs-year">${esc(h.year)}</span><h3>${esc(h.title)}</h3>${paras(h.text)}</div>`; return `<article class="hs ${i % 2 ? 'bottom' : 'top'}"><span class="hs-dot"></span><div class="hs-card">${i % 2 ? media + body : body + media}</div></article>`; }).join('');
+    if (Array.isArray(S.press) && S.press.length) $$('.press-track').forEach((tr, k) => tr.innerHTML = S.press.map(l => `<img src="${esc(l.image)}" alt="${k ? '' : esc(l.alt)}">`).join(''));
+    // Team photos may come from Supabase; keep the carousel's middle-member default
+    document.dispatchEvent(new CustomEvent('cms:ready'));
+  }
+
   /* ---------------- boot ---------------- */
-  const boot = () => {
+  const boot = async () => {
+    await loadCMS();
     const pageInit = { home: initHome, portfolio: initPortfolio, project: initProject, about: initAbout, contact: initContact }[page];
     try { pageInit && pageInit(); } catch (err) { console.error(err); }
     reveals(); watchAnim();

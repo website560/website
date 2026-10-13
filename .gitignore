@@ -14,3 +14,7 @@
 /DSC_*
 /heronew.mp4
 /WhatsApp*
+
+# Secrets
+.env*
+cms/.first-admin.json
