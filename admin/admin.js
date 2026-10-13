@@ -166,8 +166,7 @@
   async function renderDashboard() {
     const main = $('#main'); main.innerHTML = topbar('Overview', 'What’s on the website right now.');
     const keys = ['projects', 'films', 'gallery', 'reviews', 'team', 'history', 'press', 'instagram'];
-    const counts = await Promise.all(keys.map(k => api.get(k).then(d => d.length)));
-    main.insertAdjacentHTML('beforeend', `<div class="cards">${keys.map((k, i) => `<button class="card" data-go="${k}"><b>${counts[i]}</b><span>${SECTIONS[k].label}</span><span class="go">Manage →</span></button>`).join('')}</div>
+    main.insertAdjacentHTML('beforeend', `<div class="cards">${keys.map(k => `<button class="card" data-go="${k}"><b data-count="${k}">…</b><span>${SECTIONS[k].label}</span><span class="go">Manage →</span></button>`).join('')}</div>
       <div class="tips"><h3>How it works</h3><ul>
         <li><b>Add</b> with the “Add” button at the top of each section. <b>Edit</b> by clicking a row. <b>Delete</b> with the bin on the row.</li>
         <li><b>Reorder</b> by dragging the dotted handle on the left of a row. The order here is the order on the website.</li>
@@ -175,6 +174,7 @@
         <li><b>Mistakes</b> can be undone: every section has a “Previous versions” button to restore an earlier state.</li>
         <li>Changes appear on the website as soon as you save. Refresh the site to see them.</li></ul></div>`);
     main.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { state.view = b.dataset.go; render(); });
+    keys.forEach(k => api.get(k).then(d => { const el = main.querySelector(`[data-count="${k}"]`); if (el) el.textContent = d.length; }).catch(() => {}));
   }
 
   /* ---------------- generic list editor ---------------- */
