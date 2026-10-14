@@ -34,18 +34,18 @@
     <path pathLength="1" d="M532 226 L613 70 L694 226"/>
     <path pathLength="1" class="acc" d="M580 12 L604 48"/></svg>`;
 
-  const NAV = [['index.html','Home'],['about.html','About'],['portfolio.html','Portfolio'],['contact.html','Contact']];
-  const here = (location.pathname.split('/').pop() || 'index.html');
-  const activeHref = here.startsWith('project') ? 'portfolio.html' : here;
+  const NAV = [['/','Home'],['/about','About'],['/portfolio','Portfolio'],['/contact','Contact']];
+  const here = location.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/';
+  const activeHref = here.startsWith('/project') ? '/portfolio' : here;
 
   /* ---------------- chrome: nav, menu, footer ---------------- */
   document.body.insertAdjacentHTML('afterbegin', `
     
     <header class="nav ${page === 'home' ? 'is-light is-hidden' : 'is-light'}" id="nav">
       <div class="wrap">
-        <a href="index.html" class="nav-logo" aria-label="Voilà home">${LOGO()}</a>
+        <a href="/" class="nav-logo" aria-label="Voilà home">${LOGO()}</a>
         <ul class="nav-links">${NAV.map(([h, t]) => `<li><a href="${h}" class="${h === activeHref ? 'active' : ''}">${t}</a></li>`).join('')}</ul>
-        <a href="contact.html#book" class="btn nav-cta">Free consultation ${I.arr}</a>
+        <a href="/contact#book" class="btn nav-cta">Free consultation ${I.arr}</a>
         <button class="burger" aria-label="Menu"><span></span><span></span></button>
       </div>
     </header>
@@ -61,7 +61,7 @@
         <div class="footer-top">
           <div>
             <p class="f-lead">We’d love to meet you.<br><em>Coffee is on us.</em></p>
-            <a href="contact.html#book" class="btn">Book a free consultation ${I.arr}</a>
+            <a href="/contact#book" class="btn">Book a free consultation ${I.arr}</a>
             <div class="socials">
               <a href="https://www.instagram.com/voilainteriordesign/" target="_blank" rel="noopener" aria-label="Instagram">${I.ig}</a>
               <a href="https://www.facebook.com/VOILASG" target="_blank" rel="noopener" aria-label="Facebook">${I.fb}</a>
@@ -118,7 +118,7 @@
       <div class="film-meta"><span class="k">${esc(f.style)}</span><h3>${esc(f.place)}</h3></div>
     </button>`;
   const projectCard = (p, i, cls = 'work') => `
-    <a class="${cls}" href="project.html?p=${p.slug}" data-cursor="View">
+    <a class="${cls}" href="/project?p=${p.slug}" data-cursor="View">
       <div class="work-media"><img src="${p.images[0].src}" alt="${esc(p.style)}, ${esc(p.place)}" loading="lazy" data-inner></div>
       <div class="work-meta"><div><h3>${esc(p.style)}</h3><p>${esc(p.place)}</p></div></div>
     </a>`;
@@ -153,7 +153,7 @@
     $('h3', vm).innerHTML = `<span class="split-line"><span>${esc(f.place)}</span></span>`;
     $('p', vm).textContent = `Interior design by Voilà · Home tour film${f.dur ? ' · ' + f.dur : ''}`;
     const pl = $('.vm-proj', vm);
-    if (proj && page !== 'project') { pl.style.display = ''; pl.href = `project.html?p=${proj.slug}`; } else pl.style.display = 'none';
+    if (proj && page !== 'project') { pl.style.display = ''; pl.href = `/project?p=${proj.slug}`; } else pl.style.display = 'none';
     $('img', vmVideo).src = f.thumb || thumb(id);
     $('img', vmVideo).onerror = function () { this.onerror = null; this.src = this.src.replace('maxresdefault', 'hqdefault'); };
     vmVideo.classList.remove('playing');
@@ -637,7 +637,7 @@
       return `<figure class="${cls}" data-img-reveal data-li="${i + 1}" data-cursor="View"><img src="${im.src}" alt="${esc(p.style)}, ${esc(p.place)}" loading="lazy"></figure>`;
     }).join('');
     $('.proj-flow').addEventListener('click', e => { const f = e.target.closest('figure'); if (f) openLightbox(list, +f.dataset.li); });
-    const np = $('.next-proj'); np.href = `project.html?p=${nx.slug}`;
+    const np = $('.next-proj'); np.href = `/project?p=${nx.slug}`;
     $('img', np).src = nx.images[0].src; $('h2', np).textContent = nx.style; $('.np-place', np).textContent = nx.place;
   }
 

@@ -180,7 +180,7 @@
   /* ---------------- generic list editor ---------------- */
   async function renderList(key) {
     const S = SECTIONS[key], main = $('#main');
-    main.innerHTML = topbar(S.label, S.blurb, `<button class="btn ghost sm" data-versions>Previous versions</button><button class="btn" data-add>+ Add ${S.one}</button>`);
+    main.innerHTML = topbar(S.label, S.blurb, `${key === 'reviews' ? '<button class="btn ghost sm" data-gsync>Check Google now</button>' : ''}<button class="btn ghost sm" data-versions>Previous versions</button><button class="btn" data-add>+ Add ${S.one}</button>`);
     let items = await api.get(key); state.data[key] = items;
     main.insertAdjacentHTML('beforeend', `<div class="toolbar"><div class="search"><input placeholder="Search ${S.label.toLowerCase()}…" id="q"></div><span class="count" id="count"></span></div><div class="list" id="list"></div>`);
     const list = $('#list'), q = $('#q');
@@ -206,6 +206,14 @@
     });
     $('[data-add]').onclick = () => openForm(key, null, async val => { items.unshift(val); draw(); await persist('Added ' + S.title(val)); });
     $('[data-versions]').onclick = () => openVersions(key, async () => { items = await api.get(key); draw(); });
+    const gs = $('[data-gsync]');
+    if (gs) gs.onclick = async () => {
+      if (demo) return toast('Demo mode: this checks Google for new 5-star reviews.');
+      gs.disabled = true; gs.textContent = 'Checking Google…';
+      try { const r = await api.call('reviews-sync', { method: 'POST', body: {} }); items = await api.get(key); draw(); toast(r.added ? `Added ${r.added} new 5-star review${r.added > 1 ? 's' : ''}` : 'No new 5-star reviews right now'); }
+      catch (e) { toast(e.message, true); }
+      gs.disabled = false; gs.textContent = 'Check Google now';
+    };
     // drag to reorder
     let from = null;
     list.addEventListener('dragstart', e => { const r = e.target.closest('.row'); if (!r) return; from = +r.dataset.i; r.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });

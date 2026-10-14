@@ -21,5 +21,12 @@
         }
       ]
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/reviews-sync",
+      "schedule": "0 1 * * *"
+    }
+  ],
+  "cleanUrls": true
 }

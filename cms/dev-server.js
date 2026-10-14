@@ -22,6 +22,7 @@ http.createServer(async (req, res) => {
     return fn(req, res);
   }
   let p = decodeURIComponent(url.pathname); if (p.endsWith('/')) p += 'index.html';
+  if (!path.extname(p) && fs.existsSync(path.join(ROOT, p + '.html'))) p += '.html';   // clean URLs, like Vercel
   const file = path.join(ROOT, p);
   if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.statusCode = 404; return res.end('Not found'); }
   res.setHeader('Content-Type', MIME[path.extname(file).slice(1)] || 'application/octet-stream'); res.setHeader('Cache-Control', 'no-store');
