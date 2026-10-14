@@ -5,6 +5,17 @@
       "source": "/admin/",
       "destination": "/admin",
       "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?consultation\\.voila\\.sg"
+        }
+      ],
+      "destination": "https://www.voila.sg/contact#book",
+      "permanent": true
     }
   ],
   "headers": [
