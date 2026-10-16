@@ -487,7 +487,7 @@
     // ---- process ----
     const pimgs = $$('.process-media img');
     $$('.step').forEach((s, i) => ScrollTrigger.create({
-      trigger: s, start: 'top 60%', end: 'bottom 60%',
+      trigger: s, start: 'top 50%', end: 'bottom 50%',
       onToggle: st => { if (st.isActive) { $$('.step').forEach(x => x.classList.toggle('on', x === s)); pimgs.forEach((im, j) => im.classList.toggle('on', j === i)); } }
     }));
 
@@ -677,7 +677,13 @@
   /* ---------------- team carousel: centre member large, sides smaller, overlay on hover/tap ---------------- */
   function TeamCarousel() {
     const stage = $('.team-stage'); if (!stage) return;
-    const cards = $$('.tm', stage), n = cards.length; let ci = 1;
+    const cards = $$('.tm', stage), n = cards.length; let ci = Math.min(1, n - 1);
+    if (n <= 2) { // two people: side by side, no carousel
+      stage.classList.add('team-duo'); $('.team-ui') && ($('.team-ui').style.display = 'none');
+      stage.addEventListener('click', e => { const c = e.target.closest('.tm'); if (c && isTouch) { cards.forEach(x => x !== c && x.classList.remove('is-open')); c.classList.toggle('is-open'); } });
+      cards.forEach(c => c.classList.add('is-center'));
+      return;
+    }
     const layout = () => {
       const w = cards[0].getBoundingClientRect().width, gap = mobile() ? 14 : 28;
       cards.forEach((c, i) => {
@@ -753,7 +759,7 @@
     }
     const mv = $('.marquee-v'); if (mv) buildReviews(mv);
     const pimgs = $$('.process-media img');
-    hasGSAP && $$('.step').forEach((s, i) => ScrollTrigger.create({ trigger: s, start: 'top 60%', end: 'bottom 60%', onToggle: st => { if (st.isActive) { $$('.step').forEach(x => x.classList.toggle('on', x === s)); pimgs.forEach((im, j) => im.classList.toggle('on', j === i)); } } }));
+    hasGSAP && $$('.step').forEach((s, i) => ScrollTrigger.create({ trigger: s, start: 'top 50%', end: 'bottom 50%', onToggle: st => { if (st.isActive) { $$('.step').forEach(x => x.classList.toggle('on', x === s)); pimgs.forEach((im, j) => im.classList.toggle('on', j === i)); } } }));
   }
 
   /* ==========================================================================
