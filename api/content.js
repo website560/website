@@ -4,7 +4,7 @@
 // POST /api/content { action:'restore', key, id }
 const { sb, requireUser, readBody, send, wrap } = require('./_lib');
 
-const KEYS = ['projects', 'films', 'gallery', 'reviews', 'team', 'history', 'press', 'instagram', 'site'];
+const KEYS = ['projects', 'films', 'gallery', 'reviews', 'team', 'history', 'press', 'instagram', 'site', 'products'];
 const okKey = k => KEYS.includes(k);
 
 async function current(key) {

@@ -80,6 +80,7 @@
       case 'gallery': return (D.gallery || []).filter(g => !g.project).map(g => ({ src: g.src, thumb: g.thumb || g.src, w: g.w, h: g.h, style: g.style, place: g.place, film: g.film || '' }));
       case 'reviews': return (D.reviews || []).map(r => ({ ...r }));
       case 'instagram': return (window.VOILA_IG || []).map(p => ({ href: p.href, img: p.img, date: p.date, reel: !!p.reel }));
+      case 'products': return JSON.parse(JSON.stringify(window.VOILA_PRODUCTS || []));
       case 'team': case 'history': case 'press': case 'site': return JSON.parse(JSON.stringify(DEF[key] || (key === 'site' ? {} : [])));
     }
     return [];
@@ -109,6 +110,10 @@
     press: { label: 'As seen on', one: 'logo', icon: I.badge, blurb: 'Logos in the “As seen on” strip. PNG with a transparent background, or SVG, works best.',
       fields: [{ k: 'image', l: 'Logo', t: 'image', logo: 1, req: 1 }, { k: 'alt', l: 'Name', t: 'text', req: 1 }],
       title: i => i.alt, sub: () => '', thumb: i => i.image, logo: 1 },
+    products: { label: 'Products', one: 'product', icon: I.badge, blurb: 'Items for sale in the shop. The first photo is the main one. Untick “Show in shop” to hide an item without deleting it.',
+      fields: [{ k: 'name', l: 'Product name', t: 'text', req: 1 }, { k: 'price', l: 'Price (S$)', t: 'number', req: 1 }, { k: 'finish', l: 'Finish / colour', t: 'text', ph: 'e.g. Brushed bronze' }, { k: 'images', l: 'Photos', t: 'images', hint: 'The first photo is the main one. Square or portrait photos look best.' }, { k: 'description', l: 'Description', t: 'textarea', hint: 'Leave an empty line between paragraphs.' }, { k: 'specs', l: 'Details', t: 'textarea', hint: 'One per line, e.g.  Finish: Brushed bronze' }, { k: 'active', l: 'Show in shop', t: 'check' }],
+      title: i => i.name + (i.active === false ? '  (hidden)' : ''), sub: i => 'S$' + Number(i.price || 0).toFixed(2) + (i.finish ? ' · ' + i.finish : ''), thumb: i => i.images?.[0]?.thumb || i.images?.[0]?.src,
+      make: i => ({ active: true, ...i, slug: i.slug || slug(i.name || 'product') }) },
     instagram: { label: 'Instagram', one: 'post', icon: I.ig, blurb: 'Posts in the Instagram strip, newest first. Or set a live feed link in Site text and this list becomes the backup.',
       fields: [{ k: 'href', l: 'Post link', t: 'text', ph: 'https://www.instagram.com/p/…', req: 1 }, { k: 'img', l: 'Image', t: 'image', req: 1 }, { k: 'date', l: 'Date', t: 'text', ph: 'YYYY-MM-DD' }, { k: 'reel', l: 'This is a reel (video)', t: 'check' }],
       title: i => i.date || 'Post', sub: i => i.href, thumb: i => i.img }
@@ -124,7 +129,7 @@
 
   /* ---------------- state + render ---------------- */
   const state = { user: undefined, view: 'dashboard', data: {}, saveState: '' };
-  const NAV = [['dashboard', 'Overview', I.grid], null, 'Portfolio', ['projects'], ['films'], ['gallery'], 'About', ['reviews'], ['team'], ['history'], ['press'], ['instagram'], 'Site', ['site', 'Site text', I.text], ['settings', 'Settings', I.cog]];
+  const NAV = [['dashboard', 'Overview', I.grid], null, 'Portfolio', ['projects'], ['films'], ['gallery'], 'About', ['reviews'], ['team'], ['history'], ['press'], ['instagram'], 'Shop', ['products'], 'Site', ['site', 'Site text', I.text], ['settings', 'Settings', I.cog]];
 
   function render() {
     if (state.user === undefined) { app.innerHTML = '<div class="login"><p>Loading…</p></div>'; return; }
@@ -165,7 +170,7 @@
 
   async function renderDashboard() {
     const main = $('#main'); main.innerHTML = topbar('Overview', 'What’s on the website right now.');
-    const keys = ['projects', 'films', 'gallery', 'reviews', 'team', 'history', 'press', 'instagram'];
+    const keys = ['projects', 'films', 'gallery', 'reviews', 'team', 'history', 'press', 'instagram', 'products'];
     main.insertAdjacentHTML('beforeend', `<div class="cards">${keys.map(k => `<button class="card" data-go="${k}"><b data-count="${k}">…</b><span>${SECTIONS[k].label}</span><span class="go">Manage →</span></button>`).join('')}</div>
       <div class="tips"><h3>How it works</h3><ul>
         <li><b>Add</b> with the “Add” button at the top of each section. <b>Edit</b> by clicking a row. <b>Delete</b> with the bin on the row.</li>
@@ -239,17 +244,19 @@
       for (const f of S.fields) {
         if (f.t === 'text' || f.t === 'textarea' || f.t === 'select') val[f.k] = form.elements[f.k].value.trim();
         if (f.t === 'check') val[f.k] = form.elements[f.k].checked;
+        if (f.t === 'number') { const n = parseFloat(form.elements[f.k].value); if (form.elements[f.k].value.trim() && !(n >= 0)) return toast(`${f.l} must be a number.`, true); val[f.k] = isNaN(n) ? '' : Math.round(n * 100) / 100; }
         if (f.t === 'youtube') { const id = ytId(form.elements[f.k].value); if (form.elements[f.k].value.trim() && !id) return toast('That doesn’t look like a YouTube link.', true); val[f.k] = id; }
         if (f.req && !(f.t === 'images' ? (val[f.k] || []).length : val[f.k])) return toast(`${f.l} is required.`, true);
       }
       let out = S.make ? S.make(val) : val;
-      if (key === 'projects') out.images = (out.images || []).map(im => ({ src: im.src, thumb: im.thumb || im.src, w: im.w || 0, h: im.h || 0 }));
+      if (key === 'projects' || key === 'products') out.images = (out.images || []).map(im => ({ src: im.src, thumb: im.thumb || im.src, w: im.w || 0, h: im.h || 0 }));
       close(); await onSave(out);
     };
   }
   function fieldHtml(f, val) {
     const v = val[f.k] ?? '';
     const hint = f.hint ? `<span class="hint">${esc(f.hint)}</span>` : '';
+    if (f.t === 'number') return `<div class="field"><label>${esc(f.l)}</label><input name="${f.k}" type="number" min="0" step="0.01" value="${esc(v)}">${hint}</div>`;
     if (f.t === 'text') return `<div class="field"><label>${esc(f.l)}</label><input name="${f.k}" value="${esc(v)}" placeholder="${esc(f.ph || '')}">${hint}</div>`;
     if (f.t === 'textarea') return `<div class="field"><label>${esc(f.l)}</label><textarea name="${f.k}">${esc(v)}</textarea>${hint}</div>`;
     if (f.t === 'select') return `<div class="field"><label>${esc(f.l)}</label><select name="${f.k}">${f.opts.map(o => `<option ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;

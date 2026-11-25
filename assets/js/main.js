@@ -34,19 +34,22 @@
     <path pathLength="1" d="M532 226 L613 70 L694 226"/>
     <path pathLength="1" class="acc" d="M580 12 L604 48"/></svg>`;
 
-  const NAV = [['/','Home'],['/about','About'],['/portfolio','Portfolio'],['/contact','Contact']];
+  const NAV = [['/','Home'],['/about','About'],['/portfolio','Portfolio'],['/shop','Shop'],['/contact','Contact']];
   const here = location.pathname.replace(/\.html$/, '').replace(/\/index$/, '/').replace(/(.)\/$/, '$1') || '/';
-  const activeHref = here.startsWith('/project') ? '/portfolio' : here;
+  const activeHref = here.startsWith('/project') ? '/portfolio' : (here.startsWith('/product') || here.startsWith('/order')) ? '/shop' : here;
 
   /* ---------------- chrome: nav, menu, footer ---------------- */
   document.body.insertAdjacentHTML('afterbegin', `
     
-    <header class="nav ${page === 'home' ? 'is-light is-hidden' : 'is-light'}" id="nav">
+    <header class="nav ${page === 'home' ? 'is-light is-hidden' : ['shop', 'product', 'order'].includes(page) ? '' : 'is-light'}" id="nav">
       <div class="wrap">
         <a href="/" class="nav-logo" aria-label="Voilà home">${LOGO()}</a>
         <ul class="nav-links">${NAV.map(([h, t]) => `<li><a href="${h}" class="${h === activeHref ? 'active' : ''}">${t}</a></li>`).join('')}</ul>
-        <a href="/contact#book" class="btn nav-cta">Free consultation ${I.arr}</a>
-        <button class="burger" aria-label="Menu"><span></span><span></span></button>
+        <div class="nav-right">
+          <button class="cart-btn" data-cart-open aria-label="Cart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8h14l-1.2 11.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg><span class="cart-count" hidden>0</span></button>
+          <a href="/contact#book" class="btn nav-cta">Free consultation ${I.arr}</a>
+          <button class="burger" aria-label="Menu"><span></span><span></span></button>
+        </div>
       </div>
     </header>
     <a class="wa-float" href="https://wa.me/6580330071" target="_blank" rel="noopener" aria-label="Chat with Voilà on WhatsApp">${I.wa}</a>
@@ -242,6 +245,7 @@
 
   /* ---------------- scroll animation that replays every time an item enters ---------------- */
   const animIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => e.target.classList.toggle('in', e.isIntersecting)), { rootMargin: '0px 0px -8% 0px', threshold: .12 }) : null;
+  window.__watchAnim = (...a) => watchAnim(...a);
   function watchAnim(scope = document) { $$('.anim:not([data-w])', scope).forEach(el => { el.dataset.w = 1; animIO ? animIO.observe(el) : el.classList.add('in'); }); }
 
   /* ---------------- portfolio hero: curved wall of photo columns floating up forever ---------------- */
@@ -814,6 +818,7 @@
     if (stage && Array.isArray(S.team) && S.team.length) stage.innerHTML = S.team.map((m, i) => `<article class="tm" data-i="${i}"><img src="${esc(m.photo)}" alt="${esc(m.name)}, ${esc(m.role)} at Voilà" loading="lazy" draggable="false"><div class="tm-cap"><b>${esc(m.name)}</b><span>${esc(m.role)}</span></div><div class="tm-over"><h3>${esc(m.name)}</h3><p class="tm-role">${esc(m.role)}</p>${paras(m.bio)}</div></article>`).join('');
     const track = $('.hist-track');
     if (track && Array.isArray(S.history) && S.history.length) track.innerHTML = '<div class="hist-line"><i></i></div>' + S.history.map((h, i) => { const media = `<div class="hs-media"><img src="${esc(h.image)}" alt="" loading="lazy"></div>`, body = `<div class="hs-body"><span class="hs-year">${esc(h.year)}</span><h3>${esc(h.title)}</h3>${paras(h.text)}</div>`; return `<article class="hs ${i % 2 ? 'bottom' : 'top'}"><span class="hs-dot"></span><div class="hs-card">${i % 2 ? media + body : body + media}</div></article>`; }).join('');
+    if (Array.isArray(S.products) && S.products.length) window.VOILA_PRODUCTS = S.products;
     if (Array.isArray(S.press) && S.press.length) $$('.press-track').forEach((tr, k) => tr.innerHTML = S.press.map(l => `<img src="${esc(l.image)}" alt="${k ? '' : esc(l.alt)}">`).join(''));
     // Team photos may come from Supabase; keep the carousel's middle-member default
     document.dispatchEvent(new CustomEvent('cms:ready'));
@@ -824,6 +829,7 @@
     await loadCMS();
     const pageInit = { home: initHome, portfolio: initPortfolio, project: initProject, about: initAbout, contact: initContact }[page];
     try { pageInit && pageInit(); } catch (err) { console.error(err); }
+    try { window.VOILA_SHOP && window.VOILA_SHOP.init(page); } catch (err) { console.error(err); }
     reveals(); watchAnim();
     // page-hero entrance
     if (hasGSAP && $('.rise-hero')) {

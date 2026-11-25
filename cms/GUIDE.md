@@ -19,6 +19,9 @@ Changes go live on the website the moment you save. Refresh the website to see t
 - **As seen on:** the press logos (PNG with transparent background, or SVG).
 - **Instagram:** the posts in the Instagram strip. Paste the post link and upload its image.
 
+**Shop**
+- **Products:** the items in the shop. Add a product with its name, price (S$), finish, photos, description and details (one per line, like `Finish: Brushed bronze`). The first photo is the main one. Untick **Show in shop** to hide an item without deleting it. Each product gets its own page, and other products appear under "You may also like".
+
 **Site**
 - **Site text:** the big headlines, the intro tagline, the closing band, the Google rating numbers, contact details and opening hours.
 - **Settings:** change your password.
